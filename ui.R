@@ -41,17 +41,57 @@ shinyUI(fluidPage(
                )
              )
     ),
+
+    # A page that allows the user to scroll through the data 
+    # (or subset of data of interest)
+    tabPanel("Explore the data with tables",
+             sidebarLayout(
+               sidebarPanel(
+                 actionButton(
+                   inputId = "var_clear",
+                   label = "Clear all variables"
+                 ),
+                 checkboxGroupInput(
+                   inputId = "var_boxes",
+                   label = "Check variables to show:",
+                   choices = names(poke_data)[2:length(names(poke_data))],
+                   selected = names(poke_data)[2:length(names(poke_data))]
+                 )
+               ),
+               mainPanel(
+                 checkboxGroupInput(inputId = "var_generation",
+                             label = "Generation:",
+                             choices = as.character(1:7),
+                             selected = as.character(1:7),
+                             inline = TRUE
+                             ),
+                 sliderInput(inputId = "var_attack",
+                             label = "Attack",
+                             min = min(poke_data$attack),
+                             max = max(poke_data$attack),
+                             value = c(min(poke_data$attack),
+                                       max(poke_data$attack))
+                             ),
+                 sliderInput(inputId = "var_defense",
+                             label = "Defense",
+                             min = min(poke_data$defense),
+                             max = max(poke_data$defense),
+                             value = c(min(poke_data$defense),
+                                       max(poke_data$defense))
+                             ),
+                 
+                 DT::DTOutput("dynamic_table"),
+                 textInput("filename", "Enter file name:", value = "pokemonData"),
+                 downloadButton("csv_download", 
+                                label = "Download this table as CSV")
+               )
+             )
+    ),
     
     # A data exploration page where common numeric and graphical 
     # summaries can be created by the user
-    tabPanel("Explore the Data Numerically & Graphically",
+    tabPanel("Explore the data numerically & graphically",
              p("Graphs")
-    ),
-    
-    # A page that allows the user to scroll through the data 
-    # (or subset of data of interest)
-    tabPanel("Explore the data Tables",
-             p("Tables")
     ),
     
     # A page with either clustering (include a dendogram) 

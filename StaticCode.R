@@ -3,10 +3,16 @@ library(shiny)
 
 poke_data <- read_csv("pokemon.csv") %>% tibble::as_tibble()
 
-poke_data <- poke_data %>% 
+poke_data <- poke_data %>% select("name", everything()) %>%
   mutate(capture_rate = as.integer(capture_rate),
-                                generation = as.factor(generation),
-                                pokedex_website = paste0("https://www.pokemon.com/us/pokedex/", pokedex_number))
+         generation = as.factor(generation),
+         pokedex_website = paste0("https://www.pokemon.com/us/pokedex/", 
+                                  pokedex_number),
+         type2 = ifelse(is.na(type2), "none", type2))
+
+poke_data %>% DT::datatable()
+
+poke_data %>% select(c("name", "against_bug")) %>% DT::datatable()
 
 x <- sample(1:nrow(poke_data), 1)
 print(paste0(poke_data$name[x],
@@ -15,6 +21,8 @@ print(paste0(poke_data$name[x],
              " originally introduced in generation ",
              poke_data$generation[x],
              "."))
+
+
 
 (
 poke_group_table <- poke_data 
