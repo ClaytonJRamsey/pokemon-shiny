@@ -1,4 +1,5 @@
 library(ggplot2)
+library(plotly)
 
 shinyUI(fluidPage(
   tabsetPanel(
@@ -79,7 +80,13 @@ shinyUI(fluidPage(
                              value = c(min(poke_data$defense),
                                        max(poke_data$defense))
                              ),
-                 
+                 sliderInput(inputId = "var_speed",
+                             label = "Speed",
+                             min = min(poke_data$speed),
+                             max = max(poke_data$speed),
+                             value = c(min(poke_data$speed),
+                                       max(poke_data$speed))
+                             ),
                  DT::DTOutput("dynamic_table"),
                  textInput("filename", "Enter file name:", value = "pokemonData"),
                  downloadButton("csv_download", 
@@ -91,7 +98,83 @@ shinyUI(fluidPage(
     # A data exploration page where common numeric and graphical 
     # summaries can be created by the user
     tabPanel("Explore the data numerically & graphically",
-             p("Graphs")
+             sidebarLayout(
+               sidebarPanel(
+                 selectInput(
+                   inputId = "number_vars",
+                   label = "How many variables to visualize:",
+                   choices = c("1","2","3"),
+                   selected = "1"
+                 ),
+                 conditionalPanel("input.number_vars == '1'",
+                                  selectInput(
+                                    inputId = "one_var_visual",
+                                    label = "Which variable to view:",
+                                    choices = poke_numerical_vars,
+                                    selected = "hp"
+                                  ),
+                                  selectInput(
+                                    inputId = "one_var_plot_type",
+                                    label = "Plot Type",
+                                    choices = c("Histogram", "Density"),
+                                    selected = "Histogram"
+                                  ),
+                                  conditionalPanel(
+                                    condition = "input.one_var_plot_type == 'Histogram'",
+                                    sliderInput("hist_bins", "Bins",
+                                                min = 10,
+                                                max = 30,
+                                                value = 30)
+                                  ),
+                                  selectInput(
+                                    inputId = "fill_by_generation",
+                                    label = "Color by Generation?",
+                                    choices = c("Yes", "No"),
+                                    selected = "Yes"
+                                  ),
+                                  selectInput(
+                                    inputId = "one_var_gen_facets",
+                                    label = "Separate Graphs by Generation?",
+                                    choices = c("Yes", "No"),
+                                    selected = "No"
+                                  ),
+                                  conditionalPanel(
+                                    condition = "input.one_var_gen_facets == 'No' && 
+                                    input.fill_by_generation == 'Yes' &&
+                                    input.one_var_plot_type == 'Density'",
+                                    sliderInput("one_var_alpha",
+                                                label = "Alpha Transparency",
+                                                min = 0,
+                                                max = 1,
+                                                step = 0.1,
+                                                value = 1.0)
+                                  ),
+                                  selectInput("one_var_interactive",
+                                              label = "Enable Interactive Plots?",
+                                              choices = c("Yes", "No"),
+                                              selected = "No"
+                                              )
+                                ),
+                 conditionalPanel("input.number_vars == '2'",
+                                  p("two var controls")
+                                ),
+                 conditionalPanel("input.number_vars == '3'",
+                                  p("three var controls")
+                                )
+               ),
+               mainPanel(
+                 conditionalPanel("input.number_vars == '1'",
+                                  p("one var graphs"),
+                                  uiOutput("one_var_graph")
+               ),
+                 conditionalPanel("input.number_vars == '2'",
+                                  p("two var graphs")
+               ),
+                 conditionalPanel("input.number_vars == '3'",
+                                  p("three var graphs")
+               )
+             )
+          )
     ),
     
     # A page with either clustering (include a dendogram) 
