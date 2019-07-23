@@ -1,31 +1,9 @@
 library(shiny)
 library(tidyverse)
 library(ggplot2)
+library(readr)
 
 shinyServer(function(input, output, session) {
-  
-  # Initial data read and variable work:
-  poke_data <- read_csv("pokemon.csv") %>% tibble::as_tibble()
-  x <- 1
-  
-  poke_data <- poke_data %>%
-    mutate(capture_rate = as.integer(capture_rate),
-           generation = as.factor(generation),
-           pokedex_website = paste0("https://www.pokemon.com/us/pokedex/", 
-                                    pokedex_number),
-           type2 = ifelse(is.na(type2), "none", type2),
-           experience_growth = as.numeric(experience_growth)) %>% 
-    select("name", everything())
-  
-  # This code forms a vector of numerical variable names.
-  numeric_checker <- function(n){
-    return(is.numeric(poke_data[[n]]))
-  }
-  poke_variables <- names(poke_data)
-  poke_numerical <- unlist(lapply(as.list(poke_variables), FUN = numeric_checker))
-  poke_numerical_vars <- poke_variables[poke_numerical]
-  poke_discrete_vars <- setdiff(poke_variables, poke_numerical_vars)
-  
 
 ####################### Observation Zone ##################################33
   observe({
@@ -37,6 +15,9 @@ shinyServer(function(input, output, session) {
           x <- sample(1:nrow(poke_data), 1)
         }
       }
+    
+    g <- ggplot(poke_data)
+    
     
     # dynamic UI for single variable graphs
     one_var_visual <- input$one_var_visual # numerical variables
@@ -54,7 +35,7 @@ shinyServer(function(input, output, session) {
                       max = 10 + floor(max(var, na.rm = TRUE)/4)
                       )
     
-    g <- ggplot(poke_data)
+    
     if(one_var_plot_type == "Density"){
       if(fill_by_generation == "No"){
         onevar_g <- g + geom_density(aes(x = var), na.rm = TRUE) + 
@@ -106,6 +87,58 @@ shinyServer(function(input, output, session) {
         )
     }
     
+    # Two variable Visualizations:
+    two_var_plot <- input$two_var_plot # Scatter, Box, or Count
+    smooth_type <- input$smooth_type
+    id_legendary <- input$id_legendary
+    two_var_interactive <- input$two_var_interactive
+    
+    
+    # Two var graph logic
+    if(two_var_plot == "Scatter"){
+      xvar_name <- input$two_var_x
+      yvar_name <- input$two_var_y
+      xvar <- poke_data[[xvar_name]]
+      yvar <- poke_data[[yvar_name]]
+      if(id_legendary == "Yes"){
+        twovar_g <- g + geom_point(aes(x = xvar, y = yvar, color = is_legendary), na.rm = TRUE)
+      }else{
+        twovar_g <- g + geom_point(aes(x = xvar, y = yvar), na.rm = TRUE)
+      }
+      if(smooth_type == "Loess"){
+        twovar_g <- twovar_g + geom_smooth(aes(x = xvar, y = yvar), method = "loess", na.rm = TRUE)
+      }
+      if(smooth_type == "LM"){
+        twovar_g <- twovar_g + geom_smooth(aes(x = xvar, y = yvar), method = "lm", na.rm = TRUE)
+      }
+    }
+    if(two_var_plot == "Count"){
+      xvar_name <- input$two_var_x_disc
+      yvar_name <- input$two_var_y_disc
+      xvar <- poke_data[[xvar_name]]
+      yvar <- poke_data[[yvar_name]]
+      twovar_g <- g + geom_count(aes(x = xvar, y = yvar), na.rm = TRUE) + 
+        theme(axis.text.x = element_text(angle=90))
+    }
+    if(two_var_plot == "Box"){
+      xvar_name <- input$two_var_x_disc
+      yvar_name <- input$two_var_y
+      xvar <- poke_data[[xvar_name]]
+      yvar <- poke_data[[yvar_name]]
+      twovar_g <- g + geom_boxplot(aes(x = xvar, y = yvar), na.rm = TRUE) + 
+        theme(axis.text.x = element_text(angle=90))
+    }
+    # labels
+    twovar_g <- twovar_g + labs(x = xvar_name, y = yvar_name)
+    #Plotly
+    if(two_var_interactive == "Yes"){
+      twovar_g <- ggplotly(twovar_g)
+      output$two_var_graph <- renderUI(tagList(renderPlotly(twovar_g)))
+    }else{
+      output$two_var_graph <- renderUI(tagList(renderPlot(twovar_g)))
+    }
+    
+    
       output$pokemon_info <- 
         renderUI(tagList(
           strong(paste0(poke_data$name[x], 
@@ -119,6 +152,11 @@ shinyServer(function(input, output, session) {
         )
       
       # the data table on the second tab:
+#      updateCheckboxGroupInput(session, inputId = "var_boxes",
+#                               choices = names(poke_data)[2:length(names(poke_data))],
+#                               selected = names(poke_data)[2:length(names(poke_data))])
+     
+     
       attack_values <- input$var_attack
       defense_values <- input$var_defense
       speed_values <- input$var_speed
@@ -134,7 +172,7 @@ shinyServer(function(input, output, session) {
                ) %>%
         select(c("name", input$var_boxes))
       
-      output$dynamic_table <- DT::renderDT(filter_table)
+      output$dynamic_table <- DT::renderDT(filter_table, rownames = FALSE)
       
       # file download for table
       file_name <- paste0(input$filename, ".csv")
@@ -155,9 +193,9 @@ shinyServer(function(input, output, session) {
   observeEvent(input$var_clear,
     updateCheckboxGroupInput(session, "var_boxes",
                              selected = character(0))
-     )
-  
+              )
 
+  
   })
   
 

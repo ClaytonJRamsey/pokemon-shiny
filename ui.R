@@ -1,6 +1,8 @@
 library(ggplot2)
 library(plotly)
 
+source("dataread.r")
+
 shinyUI(fluidPage(
   tabsetPanel(
     # An information page that describes the data and abilities of the app:
@@ -18,12 +20,11 @@ shinyUI(fluidPage(
                  conditionalPanel(
                    condition = "input.pokemon_basic == 'Number'",
                    numericInput("entry_number",
-                                paste0("Enter a number from 1 to ",
-                                       nrow(poke_data)),
+                                label = "Enter a number from 1 to 801:",
                                 value = 1,
                                 min = 1,
-                                max = nrow(poke_data),
-                                step = 1
+                                max = nrow(poke_data)#,
+                                #step = 1
                                 )
                  ),
                  conditionalPanel(
@@ -55,8 +56,8 @@ shinyUI(fluidPage(
                  checkboxGroupInput(
                    inputId = "var_boxes",
                    label = "Check variables to show:",
-                   choices = names(poke_data)[2:length(names(poke_data))],
-                   selected = names(poke_data)[2:length(names(poke_data))]
+                   choices = poke_variables[2:length(poke_variables)],
+                   selected = poke_variables[2:length(poke_variables)]
                  )
                ),
                mainPanel(
@@ -68,24 +69,24 @@ shinyUI(fluidPage(
                              ),
                  sliderInput(inputId = "var_attack",
                              label = "Attack",
-                             min = min(poke_data$attack),
-                             max = max(poke_data$attack),
-                             value = c(min(poke_data$attack),
-                                       max(poke_data$attack))
+                             min = min(poke_data$attack, na.rm = TRUE),
+                             max = max(poke_data$attack, na.rm = TRUE),
+                             value = c(min(poke_data$attack, na.rm = TRUE),
+                                       max(poke_data$attack, na.rm = TRUE))
                              ),
                  sliderInput(inputId = "var_defense",
                              label = "Defense",
-                             min = min(poke_data$defense),
-                             max = max(poke_data$defense),
-                             value = c(min(poke_data$defense),
-                                       max(poke_data$defense))
+                             min = min(poke_data$defense, na.rm = TRUE),
+                             max = max(poke_data$defense, na.rm = TRUE),
+                             value = c(min(poke_data$defense, na.rm = TRUE),
+                                       max(poke_data$defense, na.rm = TRUE))
                              ),
                  sliderInput(inputId = "var_speed",
                              label = "Speed",
-                             min = min(poke_data$speed),
-                             max = max(poke_data$speed),
-                             value = c(min(poke_data$speed),
-                                       max(poke_data$speed))
+                             min = min(poke_data$speed, na.rm = TRUE),
+                             max = max(poke_data$speed, na.rm = TRUE),
+                             value = c(min(poke_data$speed, na.rm = TRUE),
+                                       max(poke_data$speed, na.rm = TRUE))
                              ),
                  DT::DTOutput("dynamic_table"),
                  textInput("filename", "Enter file name:", value = "pokemonData"),
@@ -102,11 +103,11 @@ shinyUI(fluidPage(
                sidebarPanel(
                  selectInput(
                    inputId = "number_vars",
-                   label = "How many variables to visualize:",
-                   choices = c("1","2","3"),
-                   selected = "1"
+                   label = "Summary Type:",
+                   choices = c("1 var. graph","2 var. graph","Tabular"),
+                   selected = "1 var. graph"
                  ),
-                 conditionalPanel("input.number_vars == '1'",
+                 conditionalPanel("input.number_vars == '1 var. graph'",
                                   selectInput(
                                     inputId = "one_var_visual",
                                     label = "Which variable to view:",
@@ -143,7 +144,7 @@ shinyUI(fluidPage(
                                     input.fill_by_generation == 'Yes' &&
                                     input.one_var_plot_type == 'Density'",
                                     sliderInput("one_var_alpha",
-                                                label = "Alpha Transparency",
+                                                label = "Opacity",
                                                 min = 0,
                                                 max = 1,
                                                 step = 0.1,
@@ -155,23 +156,83 @@ shinyUI(fluidPage(
                                               selected = "No"
                                               )
                                 ),
-                 conditionalPanel("input.number_vars == '2'",
-                                  p("two var controls")
+                 conditionalPanel("input.number_vars == '2 var. graph'",
+                                  p("two var controls"),
+                                  selectInput(inputId = "two_var_plot",
+                                              label = "Choose Plot Type:",
+                                              choices = c("Scatter", "Box", "Count"),
+                                              selected = "Scatter"),
+                                  
+                                  # Conditional for y-variable selector
+                                  # Count is discrete on y, the others are continuous
+                                  conditionalPanel(condition = "input.two_var_plot != 'Count'",
+                                                   selectInput(inputId = "two_var_y",
+                                                               label = "Vertical Axis:",
+                                                               choices = poke_numerical_vars,
+                                                               selected = sample(poke_numerical_vars,
+                                                                                 1)
+                                                   )
+                                  ),
+                                  conditionalPanel(condition = "input.two_var_plot == 'Count'",
+                                                   selectInput(inputId = "two_var_y_disc",
+                                                               label = "Vertical Axis:",
+                                                               choices = poke_discrete_vars,
+                                                               selected = sample(poke_discrete_vars,
+                                                                                 1)
+                                                   )
+                                  ),
+                                  
+                                  # Conditional for x-variable selector
+                                  # Box and Count use a discrete x, Scatter is continuous on x.
+                                  conditionalPanel(condition = "input.two_var_plot == 'Scatter'",
+                                                   selectInput(inputId = "two_var_x",
+                                                               label = "Horizontal Axis:",
+                                                               choices = poke_numerical_vars,
+                                                               selected = sample(poke_numerical_vars,
+                                                                                 1)
+                                                                ),
+                                                   # Extra Controls for scatterplot.
+                                                   selectInput(inputId = "smooth_type",
+                                                               label = "Smooth Type",
+                                                               choices = c("None",
+                                                                           "Loess",
+                                                                           "LM"),
+                                                               selected = "None"),
+                                                   selectInput(inputId = "id_legendary",
+                                                               label = "Identify Legendary?",
+                                                               choices = c("No", "Yes"),
+                                                               selected = "No")
+                                                   ),
+                                  conditionalPanel(condition = "input.two_var_plot != 'Scatter'",
+                                                   selectInput(inputId = "two_var_x_disc",
+                                                               label = "Horizontal Axis:",
+                                                               choices = poke_discrete_vars,
+                                                               selected = sample(poke_discrete_vars,
+                                                                                 1)
+                                                                )
+                                                    ),
+                                  
+                                  
+                                  selectInput(inputId = "two_var_interactive",
+                                              label = "Interactive mode?",
+                                              choices = c("No", "Yes"),
+                                              selected = "No")
                                 ),
-                 conditionalPanel("input.number_vars == '3'",
-                                  p("three var controls")
+                 conditionalPanel("input.number_vars == 'Tabular'",
+                                  p("table controls")
                                 )
                ),
                mainPanel(
-                 conditionalPanel("input.number_vars == '1'",
-                                  p("one var graphs"),
+                 conditionalPanel("input.number_vars == '1 var. graph'",
+                                  p("One Variable:"),
                                   uiOutput("one_var_graph")
                ),
-                 conditionalPanel("input.number_vars == '2'",
-                                  p("two var graphs")
+                 conditionalPanel("input.number_vars == '2 var. graph'",
+                                  p("Two Variables:"),
+                                  uiOutput("two_var_graph")
                ),
-                 conditionalPanel("input.number_vars == '3'",
-                                  p("three var graphs")
+                 conditionalPanel("input.number_vars == 'Tabular'",
+                                  p("Three Variables:")
                )
              )
           )

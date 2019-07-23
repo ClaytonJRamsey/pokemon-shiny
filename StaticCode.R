@@ -1,6 +1,7 @@
 library(tidyverse)
 library(shiny)
 library(ggplot2)
+library(plot3D)
 library(plotly)
 
 poke_data <- read_csv("pokemon.csv") %>% tibble::as_tibble()
@@ -55,6 +56,8 @@ one_var_interactive <- "No"
 
 var <- poke_data[[one_var_visual]]
 g <- ggplot(poke_data)
+
+# Logic for single var graphs
 if(one_var_plot_type == "Density"){
   if(fill_by_generation == "No"){
     onevar_g <- g + geom_density(aes(x = var), na.rm = TRUE) + 
@@ -83,8 +86,46 @@ if(one_var_gen_facets == "Yes"){
 if(one_var_interactive == "Yes"){
   onevar_g <- ggplotly(onevar_g)
 }
-
 onevar_g
+
+# Dynamic UI for 2-variable graphs
+# This one will choose based on the variables
+two_var_plot <- "Scatter" # Scatter, Box, or Count
+two_var_x <- "attack" # updated dynamically based on plot type
+xvar <- poke_data[[two_var_x]]
+two_var_y <- "defense"
+yvar <- poke_data[[two_var_y]]
+smooth_type <- "Loess"
+id_legendary <- "Yes"
+two_var_interactive <- "No"
+
+# Two var graph logic
+if(two_var_plot == "Scatter"){
+  if(id_legendary == "Yes"){
+    twovar_g <- g + geom_point(aes(x = xvar, y = yvar, color = is_legendary))
+  }else{
+    twovar_g <- g + geom_point(aes(x = xvar, y = yvar))
+  }
+  if(smooth_type == "Loess"){
+    twovar_g <- twovar_g + geom_smooth(aes(x = xvar, y = yvar), method = "loess")
+  }
+  if(smooth_type == "LM"){
+    twovar_g <- twovar_g + geom_smooth(aes(x = xvar, y = yvar), method = "lm")
+  }
+}
+if(two_var_plot == "Count"){
+  twovar_g <- g + geom_count(aes(x = xvar, y = yvar)) + theme(axis.text.x = element_text(angle=90))
+}
+if(two_var_plot == "Box"){
+  twovar_g <- g + geom_boxplot(aes(x = xvar, y = yvar)) + theme(axis.text.x = element_text(angle=90))
+}
+# labels
+twovar_g <- twovar_g + labs(x = two_var_x, y = two_var_y)
+#Plotly
+if(two_var_interactive == "Yes"){
+  twovar_g <- ggplotly(twovar_g)
+}
+twovar_g
 
 # This one is needed for a selector control
 numeric_checker <- function(n){
