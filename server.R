@@ -154,8 +154,7 @@ shinyServer(function(input, output, session) {
 
       # Grouping table from the third tab.
       if(input$to_group_by == 1){
-        var1 <- input$group_var1
-        poke_group_table <- poke_data %>% group_by(!!var1)
+        poke_group_table <- poke_data %>% group_by(poke_data[[input$group_var1]])
       }
       if(input$to_group_by == 2){
         poke_group_table <- poke_data %>% group_by(poke_data[[input$group_var1]], 
@@ -166,10 +165,11 @@ shinyServer(function(input, output, session) {
                                                    poke_data[[input$group_var2]],
                                                    poke_data[[input$group_var3]])
       }
-      summ_var <- input$summary_var
+      summ_var_name <- input$summary_var
       poke_group_table <- poke_group_table %>% 
-        summarise(`Mean` = mean(!!summ_var, na.rm = TRUE),
-                  `Standard Deviation` = sd(!!summ_var, na.rm = TRUE))
+        summarise(`Mean` = mean(eval(parse(text = summ_var_name)), na.rm = TRUE),
+                  `Standard Deviation` = sd(eval(parse(text = summ_var_name)), na.rm = TRUE))
+      
       output$grouping_table <- renderTable(poke_group_table)
      
      

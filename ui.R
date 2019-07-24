@@ -226,7 +226,7 @@ shinyUI(fluidPage(
                                               max = 3,
                                               step = 1,
                                               value = 1),
-                                  # This on always shows up
+                                  # This one always shows up
                                   selectInput("group_var1",  
                                               "First variable", 
                                               poke_discrete_vars),
