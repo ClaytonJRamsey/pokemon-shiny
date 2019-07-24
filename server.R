@@ -154,23 +154,23 @@ shinyServer(function(input, output, session) {
 
       # Grouping table from the third tab.
       if(input$to_group_by == 1){
-        poke_group_table <- poke_data %>% group_by(poke_data[[input$group_var1]])
+        poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]])
       }
       if(input$to_group_by == 2){
-        poke_group_table <- poke_data %>% group_by(poke_data[[input$group_var1]], 
-                                                   poke_data[[input$group_var2]])
+        poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]], 
+                                                   `Variable 2`=poke_data[[input$group_var2]])
       }
       if(input$to_group_by == 3){
-        poke_group_table <- poke_data %>% group_by(poke_data[[input$group_var1]],
-                                                   poke_data[[input$group_var2]],
-                                                   poke_data[[input$group_var3]])
+        poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]],
+                                                   `Variable 2`=poke_data[[input$group_var2]],
+                                                   `Variable 3`=poke_data[[input$group_var3]])
       }
       summ_var_name <- input$summary_var
       poke_group_table <- poke_group_table %>% 
         summarise(`Mean` = mean(eval(parse(text = summ_var_name)), na.rm = TRUE),
                   `Standard Deviation` = sd(eval(parse(text = summ_var_name)), na.rm = TRUE))
       
-      output$grouping_table <- renderTable(poke_group_table)
+      output$grouping_table <- DT::renderDT(poke_group_table, rownames = FALSE)
      
      
       attack_values <- input$var_attack
@@ -192,12 +192,20 @@ shinyServer(function(input, output, session) {
       
       # file download for table
       file_name <- paste0(input$filename, ".csv")
+      file_name2 <- paste0(input$filename2, ".csv")
       
       output$csv_download <- downloadHandler(
         filename = file_name,
         content = function(file){
-          write.csv(filter_table, file)
+          write_csv(filter_table, file)
           }
+      )
+      
+      output$csv_download2 <- downloadHandler(
+        filename = file_name2,
+        content = function(file){
+          write_csv(poke_group_table, file)
+        }
       )
       
       # single variable visualization

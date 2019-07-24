@@ -255,7 +255,11 @@ shinyUI(fluidPage(
                ),
                  conditionalPanel("input.number_vars == 'Tabular'",
                                   p("Summary Table:"),
-                                  tableOutput("grouping_table")
+                                  DT::DTOutput("grouping_table"),
+                                  textInput("filename2", "Enter file name:", value = "pokemonSummary"),
+                                  downloadButton("csv_download2", 
+                                                 label = "Download this table as CSV")
+                                  
                )
              )
           )
