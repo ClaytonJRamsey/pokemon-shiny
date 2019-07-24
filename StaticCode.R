@@ -25,7 +25,14 @@ print(paste0(poke_data$name[x],
              poke_data$generation[x],
              "."))
 
+poke_group_table <- poke_data %>% group_by(poke_data[["generation"]],
+                                           poke_data[["type1"]],
+                                           poke_data[["type2"]])
 
+poke_group_table <- poke_group_table %>% 
+  summarise(`Mean` = mean(!!"attack", na.rm = TRUE),
+            `Standard Deviation` = sd(!!"attack", na.rm = TRUE))
+poke_group_table
 
 (
 poke_group_table <- poke_data %>% 

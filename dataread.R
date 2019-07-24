@@ -5,7 +5,7 @@ library(readr)
 
 # Initial data read and variable work:
 poke_data <- read_csv("pokemon.csv") %>% tibble::as_tibble()
-
+x <- 1
 
 poke_data <- poke_data %>%
   mutate(capture_rate = as.integer(capture_rate),

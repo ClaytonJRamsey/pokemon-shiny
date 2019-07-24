@@ -219,7 +219,29 @@ shinyUI(fluidPage(
                                               selected = "No")
                                 ),
                  conditionalPanel("input.number_vars == 'Tabular'",
-                                  p("table controls")
+                                  p("table controls"),
+                                  sliderInput("to_group_by",
+                                              label = "Number of variables to group by:",
+                                              min = 1,
+                                              max = 3,
+                                              step = 1,
+                                              value = 1),
+                                  # This on always shows up
+                                  selectInput("group_var1",  
+                                              "First variable", 
+                                              poke_discrete_vars),
+                                  conditionalPanel("input.to_group_by >= 2",
+                                                   # This one on 2 or 3
+                                                   selectInput("group_var2",  
+                                                               "Second variable", 
+                                                               poke_discrete_vars)),
+                                  conditionalPanel("input.to_group_by == 3",
+                                                   selectInput("group_var3",  
+                                                               "Third variable", 
+                                                               poke_discrete_vars)),
+                                  selectInput("summary_var",  
+                                              "Summary variable:", 
+                                              poke_numerical_vars)
                                 )
                ),
                mainPanel(
@@ -232,7 +254,8 @@ shinyUI(fluidPage(
                                   uiOutput("two_var_graph")
                ),
                  conditionalPanel("input.number_vars == 'Tabular'",
-                                  p("Three Variables:")
+                                  p("Summary Table:"),
+                                  tableOutput("grouping_table")
                )
              )
           )

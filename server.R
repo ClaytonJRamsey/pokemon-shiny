@@ -151,10 +151,26 @@ shinyServer(function(input, output, session) {
           )
         )
       
-      # the data table on the second tab:
-#      updateCheckboxGroupInput(session, inputId = "var_boxes",
-#                               choices = names(poke_data)[2:length(names(poke_data))],
-#                               selected = names(poke_data)[2:length(names(poke_data))])
+
+      # Grouping table from the third tab.
+      if(input$to_group_by == 1){
+        var1 <- input$group_var1
+        poke_group_table <- poke_data %>% group_by(!!var1)
+      }
+      if(input$to_group_by == 2){
+        poke_group_table <- poke_data %>% group_by(poke_data[[input$group_var1]], 
+                                                   poke_data[[input$group_var2]])
+      }
+      if(input$to_group_by == 3){
+        poke_group_table <- poke_data %>% group_by(poke_data[[input$group_var1]],
+                                                   poke_data[[input$group_var2]],
+                                                   poke_data[[input$group_var3]])
+      }
+      summ_var <- input$summary_var
+      poke_group_table <- poke_group_table %>% 
+        summarise(`Mean` = mean(!!summ_var, na.rm = TRUE),
+                  `Standard Deviation` = sd(!!summ_var, na.rm = TRUE))
+      output$grouping_table <- renderTable(poke_group_table)
      
      
       attack_values <- input$var_attack
