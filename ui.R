@@ -1,5 +1,4 @@
-library(ggplot2)
-library(plotly)
+
 
 source("dataread.r")
 
@@ -274,7 +273,24 @@ shinyUI(fluidPage(
     
     # A page for modeling - see below for details
     tabPanel("Modeling",
-             p("Analysis")
+             tabsetPanel(
+               tabPanel("K Nearest Neighbors",
+                        fluidRow(
+                          column(width = 6,
+                                 selectInput("knn_var1", "First Variable", poke_numerical_vars),
+                                 selectInput("knn_var2", "Second variable", poke_numerical_vars)
+                                 ),
+                          column(width = 6,
+                                 p("input boxes")
+                          )
+                        ),
+                        sliderInput("k_value", "K value", min = 1, max = 10, value = 1),
+                        textOutput("k_mis_class")
+                        ),
+               tabPanel("Tree Regression",
+                        p("Content")
+                        )
+             )
     )
   )
 ))

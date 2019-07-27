@@ -1,7 +1,4 @@
-library(shiny)
-library(tidyverse)
-library(ggplot2)
-library(readr)
+
 
 shinyServer(function(input, output, session) {
 
@@ -101,7 +98,7 @@ shinyServer(function(input, output, session) {
       xvar <- poke_data[[xvar_name]]
       yvar <- poke_data[[yvar_name]]
       if(id_legendary == "Yes"){
-        twovar_g <- g + geom_point(aes(x = xvar, y = yvar, color = is_legendary), na.rm = TRUE)
+        twovar_g <- g + geom_point(aes(x = xvar, y = yvar, color = legendary_factor), na.rm = TRUE)
       }else{
         twovar_g <- g + geom_point(aes(x = xvar, y = yvar), na.rm = TRUE)
       }
@@ -208,16 +205,23 @@ shinyServer(function(input, output, session) {
         }
       )
       
-      # single variable visualization
-      
+      # K nearest neighbors fit
+      knn_fit <- knn_legendary(input$knn_var1, 
+                               input$knn_var2, 
+                               poke_testing,
+                               input$k_value)
+      output$k_mis_class <- 
+        renderText({paste0("Misclassification Rate: ",
+                           1 - as.numeric(sum(knn_fit == as.factor(poke_testing$is_legendary)))/length(knn_fit))})
     })
-################ End of observe function ###################33
-    
+################ End of observe function ###################
+      
   # The clear button in tab 2
   observeEvent(input$var_clear,
     updateCheckboxGroupInput(session, "var_boxes",
                              selected = character(0))
               )
+  
 
   
   })
