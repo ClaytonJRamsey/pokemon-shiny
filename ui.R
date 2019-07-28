@@ -45,7 +45,7 @@ shinyUI(fluidPage(
 
     # A page that allows the user to scroll through the data 
     # (or subset of data of interest)
-    tabPanel("Explore the data with tables",
+    tabPanel("Data Table",
              sidebarLayout(
                sidebarPanel(
                  actionButton(
@@ -87,6 +87,13 @@ shinyUI(fluidPage(
                              value = c(min(poke_data$speed, na.rm = TRUE),
                                        max(poke_data$speed, na.rm = TRUE))
                              ),
+                 sliderInput(inputId = "var_hp",
+                             label = "HP",
+                             min = min(poke_data$hp, na.rm = TRUE),
+                             max = max(poke_data$hp, na.rm = TRUE),
+                             value = c(min(poke_data$hp, na.rm = TRUE),
+                                       max(poke_data$hp, na.rm = TRUE))
+                             ),
                  DT::DTOutput("dynamic_table"),
                  textInput("filename", "Enter file name:", value = "pokemonData"),
                  downloadButton("csv_download", 
@@ -97,7 +104,7 @@ shinyUI(fluidPage(
     
     # A data exploration page where common numeric and graphical 
     # summaries can be created by the user
-    tabPanel("Explore the data numerically & graphically",
+    tabPanel("Graphs and tabular summaries",
              sidebarLayout(
                sidebarPanel(
                  selectInput(
@@ -272,20 +279,28 @@ shinyUI(fluidPage(
     ),
     
     # A page for modeling - see below for details
-    tabPanel("Modeling",
+    tabPanel("Predictive modeling",
              tabsetPanel(
                tabPanel("K Nearest Neighbors",
+                        h1("Predicting Legendary Status"),
                         fluidRow(
                           column(width = 6,
+                                 strong("Choose Variables to use:"),
                                  selectInput("knn_var1", "First Variable", poke_numerical_vars),
                                  selectInput("knn_var2", "Second variable", poke_numerical_vars)
                                  ),
                           column(width = 6,
-                                 p("input boxes")
+                                 strong("Choose Values for prediction:"),
+                                 numericInput("knn_pred1", "First Value", value = 0, min = 0),
+                                 numericInput("knn_pred2", "Second Value Value", value = 0, min = 0),
+                                 actionButton("knn_makepred", "Issue Prediction"),
+                                 textOutput("knn_predtext")
                           )
                         ),
                         sliderInput("k_value", "K value", min = 1, max = 10, value = 1),
-                        textOutput("k_mis_class")
+                        p("Check misclassification rates for these variables:"),
+                        actionButton("check_misclass", "Check"),
+                        tableOutput("k_mis_class")
                         ),
                tabPanel("Tree Regression",
                         p("Content")

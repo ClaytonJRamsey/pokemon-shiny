@@ -155,15 +155,18 @@ knn_fit <- knn_legendary("height_m", "base_happiness", poke_testing, 2)
 mis_class <- 1 - as.numeric(sum(knn_fit == as.factor(poke_testing$is_legendary)))/length(knn_fit)
 which(knn_fit != as.factor(poke_testing$is_legendary))
 
-pred1 <- "defense"
-pred2 <- "attack"
-pred1val <- runif(10, min = 1, max = 300)
-pred2val <- runif(10, min = 1, max = 300)
-predict_data <- data.frame(pred1 = pred1val, pred2 = pred2val)
+pred1 <- "attack"
+pred2 <- "defense"
+pred1val <- 50
+pred2val <- 75
+predict_data <- cbind(
+  standardize_variable(data.frame(pred1val), pred1),
+  standardize_variable(data.frame(pred2val), pred2)
+)
 names(predict_data) <- c(pred1, pred2)
-knn_predict <- knn(train = select(poke_training, pred1, pred2),
-    test = predict_data,
-    cl = poke_training$is_legendary,
-    k = 5)
 
-knn_predict == levels(knn_predict)[2]
+knn_predict <- knn(train = select(poke_training, pred1, pred2),
+                   test = predict_data,
+                   cl = poke_training$is_legendary,
+                   k = 3)
+print(knn_predict == levels(knn_predict)[2])

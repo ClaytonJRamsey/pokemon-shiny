@@ -28,8 +28,15 @@ numeric_checker <- function(n){
   return(is.numeric(poke_data[[n]]))
 }
 
+# Standardization functions.
+# This is a general one.
 standardize_data <- function(x){
   return((x-mean(x))/sd(x))
+}
+# This one standardizes a named value or vector based on the parameters of the same column
+# in the numeric data. Needed for prediction.
+standardize_variable <- function(x, n){
+  return((x-mean(poke_data_numeric[[n]]))/sd(poke_data_numeric[[n]]))
 }
 
 # Defining some vectors of variable names:
@@ -63,6 +70,7 @@ poke_data_discrete <- poke_data %>% filter(complete.cases(.)) %>% select(!!poke_
 poke_data_model <- cbind(poke_data_numeric, poke_data_discrete)
 
 # a function to use knn to predict legendary status
+# Use standardized values
 knn_legendary <- function(var1, var2, predict_set, k){
   knn_fit <- knn(train = select(poke_training, var1, var2),
                  test = select(predict_set, var1, var2),

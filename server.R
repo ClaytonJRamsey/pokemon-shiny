@@ -173,6 +173,7 @@ shinyServer(function(input, output, session) {
       attack_values <- input$var_attack
       defense_values <- input$var_defense
       speed_values <- input$var_speed
+      hp_values <- input$var_hp
       
       filter_table <- poke_data %>% 
         filter(as.character(generation) %in% input$var_generation,
@@ -181,13 +182,15 @@ shinyServer(function(input, output, session) {
                defense <= defense_values[2] & 
                  defense >= defense_values[1],
                speed <= speed_values[2] &
-                 speed >= speed_values[1]
+                 speed >= speed_values[1],
+               hp <= hp_values[2] &
+                 hp >= hp_values[1]
                ) %>%
         select(c("name", input$var_boxes))
       
       output$dynamic_table <- DT::renderDT(filter_table, rownames = FALSE)
       
-      # file download for table
+      # file download for tables
       file_name <- paste0(input$filename, ".csv")
       file_name2 <- paste0(input$filename2, ".csv")
       
@@ -205,14 +208,9 @@ shinyServer(function(input, output, session) {
         }
       )
       
-      # K nearest neighbors fit
-      knn_fit <- knn_legendary(input$knn_var1, 
-                               input$knn_var2, 
-                               poke_testing,
-                               input$k_value)
-      output$k_mis_class <- 
-        renderText({paste0("Misclassification Rate: ",
-                           1 - as.numeric(sum(knn_fit == as.factor(poke_testing$is_legendary)))/length(knn_fit))})
+      # The predictor will crash if these are the same.
+      updateSelectInput(session, "knn_var2", choices = setdiff(poke_numerical_vars, input$knn_var1))
+      
     })
 ################ End of observe function ###################
       
@@ -222,6 +220,49 @@ shinyServer(function(input, output, session) {
                              selected = character(0))
               )
   
+  # the knn check misclassifications button
+  observeEvent(input$check_misclass,
+                {
+                  kval <- 1:10
+                  misclass <- numeric(10)
+                  # K nearest neighbors fits
+                  for(k in kval){
+                    knn_fit <- knn_legendary(input$knn_var1, 
+                                             input$knn_var2, 
+                                             poke_testing,
+                                             k)
+                    misclass_status <- (knn_fit == as.factor(poke_testing$is_legendary))
+                    misclass[k] <- 1 - as.numeric(sum(misclass_status))/length(knn_fit)
+                  }
+                  
+                  output$k_mis_class <- 
+                    renderTable({data.frame(k = kval,
+                                            `Misclassification rate` = misclass)})
+                }
+            )
+  
+  # the knn make prediction button
+  observeEvent(input$knn_makepred,
+                {
+                 # names
+                 pred1 <- input$knn_var1
+                 pred2 <- input$knn_var2
+                 # values
+                 pred1val <- input$knn_pred1
+                 pred2val <- input$knn_pred2
+                 predict_data <- cbind(
+                    standardize_variable(data.frame(pred1val), pred1),
+                    standardize_variable(data.frame(pred2val), pred2)
+                 )
+                 names(predict_data) <- c(pred1, pred2)
+                 knn_predict <- knn(train = select(poke_training, pred1, pred2),
+                                    test = predict_data,
+                                    cl = poke_training$is_legendary,
+                                    k = input$k_value)
+                 output$knn_predtext <- renderText({knn_predict == levels(knn_predict)[2]})
+                 
+               }
+              )
 
   
   })
