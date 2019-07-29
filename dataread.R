@@ -4,6 +4,7 @@ library(readr)
 library(plotly)
 library(shiny)
 library(class)
+library(randomForest)
 
 # Initial data read and variable work:
 poke_data <- read_csv("pokemon.csv") %>% tibble::as_tibble()
@@ -66,8 +67,16 @@ poke_training <- setdiff(poke_data_numeric_standard, poke_testing)
 # A data frame of the discrete variables
 poke_data_discrete <- poke_data %>% filter(complete.cases(.)) %>% select(!!poke_discrete_vars) 
 
-# A data frame of all the modeling vars
-poke_data_model <- cbind(poke_data_numeric, poke_data_discrete)
+# A data frame of all the modeling vars with factor vars for categorical.
+# Dropping is_legendary because there is a factor variable version of it.
+poke_data_model <- cbind(poke_data_numeric, poke_data_discrete) %>%
+  select(-is_legendary) %>% mutate(percentage_male = as.factor(percentage_male),
+                                   type1 = as.factor(type1),
+                                   type2 = as.factor(type2),
+                                   legendary_factor = as.factor(legendary_factor))
+# Testing and training Data for the full vars data
+poke_testing_full <- poke_data_model %>% sample_n(nrow(poke_data_model)/5)
+poke_training_full <- setdiff(poke_data_model, poke_testing_full)
 
 # a function to use knn to predict legendary status
 # Use standardized values

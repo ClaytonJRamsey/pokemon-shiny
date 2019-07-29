@@ -170,3 +170,13 @@ knn_predict <- knn(train = select(poke_training, pred1, pred2),
                    cl = poke_training$is_legendary,
                    k = 3)
 print(knn_predict == levels(knn_predict)[2])
+
+rf_vars_to_use <- 7 # up to 11
+rf_response <- "hp" # fill the control from names(poke_data_model)
+
+rf_fit <- randomForest(eval(parse(text = paste0(rf_response, " ~ ."))), 
+                       data = poke_training_full, 
+                       mtry = rf_vars_to_use, 
+                       importance = TRUE)
+rf_pred <- predict(rf_fit, newdata = poke_testing_full)
+rf_RMSE <- sqrt(mean((rf_pred-poke_testing_full[[rf_response]])^2))
