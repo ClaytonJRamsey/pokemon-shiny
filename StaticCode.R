@@ -172,7 +172,7 @@ knn_predict <- knn(train = select(poke_training, pred1, pred2),
 print(knn_predict == levels(knn_predict)[2])
 
 rf_vars_to_use <- 7 # up to 11
-rf_response <- "hp" # fill the control from names(poke_data_model)
+rf_response <- "base_egg_steps" # fill the control from names(poke_data_model)
 
 rf_fit <- randomForest(eval(parse(text = paste0(rf_response, " ~ ."))), 
                        data = poke_training_full, 
@@ -180,3 +180,13 @@ rf_fit <- randomForest(eval(parse(text = paste0(rf_response, " ~ ."))),
                        importance = TRUE)
 rf_pred <- predict(rf_fit, newdata = poke_testing_full)
 rf_RMSE <- sqrt(mean((rf_pred-poke_testing_full[[rf_response]])^2))
+
+kmeans_fit <- kmeans(poke_data_numeric_standard, 3)
+cluster_number <- as.factor(kmeans_fit$cluster)
+pokemon_name <- poke_data_names$name
+cluster_data <- cbind(poke_data_numeric_standard, cluster_number, pokemon_name)
+kgraph <- ggplot(cluster_data) + geom_point(aes(x = attack, y = speed, color = cluster_number))
+kgraph
+print(kmeans_fit$totss)
+print(kmeans_fit$withinss)
+print(kmeans_fit$betweenss)

@@ -82,5 +82,11 @@ random_pokemon <- function(n = 0){
   c <- c[[1]][which(c[[1]] != " ")]
   return(paste0(c, collapse = ""))
 }
-
 v_poke <- Vectorize(random_pokemon)
+
+# to make up random stats to use the random forest on.
+stat_sampler <- function(n){
+  return(sample(poke_data_model[[n]], 1))
+}
+  
+  

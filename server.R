@@ -263,6 +263,56 @@ shinyServer(function(input, output, session) {
                  
                }
               )
+  
+  # the random forest generate model button
+  observeEvent(input$rf_generate,
+               {
+                 rf_vars_to_use <- input$rf_vars_to_use # up to 11
+                 rf_response <- input$rf_response
+                 
+                 rf_fit <- randomForest(eval(parse(text = paste0(rf_response, " ~ ."))), 
+                                        data = poke_training_full, 
+                                        mtry = rf_vars_to_use, 
+                                        importance = TRUE)
+                 rf_pred <- predict(rf_fit, newdata = poke_testing_full)
+                 rf_RMSE <- sqrt(mean((rf_pred-poke_testing_full[[rf_response]])^2))
+                 output$rf_RMSE <- 
+                   renderText({paste0("RMSE of this model: ", rf_RMSE)})
+                 output$rf_mean <- 
+                   renderText({paste0("Mean of ", rf_response, ": ",
+                                      as.character(mean(poke_data_model[[rf_response]])))})
+                 rf_model_generated <- "yes"
+               })
+  
+  observeEvent(input$rf_predict,{
+                    # Randomization:
+                    random_stats <- 
+                      as.data.frame(lapply(as.list(names(poke_training_full)), FUN = stat_sampler))
+                    names(random_stats) <- names(poke_training_full)
+                    
+                    rf_response <- input$rf_response
+                    output$random_name <- renderUI({h3(random_pokemon())})
+                    
+                    # generate a model if the user didn't already.
+                    # These aren't generally observed because they take so long to make.
+                    if(rf_model_generated == "no"){
+                      rf_fit <- randomForest(eval(parse(text = paste0(rf_response, " ~ ."))), 
+                                             data = poke_training_full, 
+                                             mtry = input$rf_vars_to_use, 
+                                             importance = TRUE)
+                    }
+                    
+                    rf_pred <- predict(rf_fit, newdata = random_stats)
+                    output$rf_prediction <- renderText({paste0(rf_response,
+                                                               ": ",
+                                                               rf_pred)})
+                    
+                    stat_names <- names(random_stats)
+                    stat_values <- t(random_stats)
+                    random_stats <- data.frame(Stat = stat_names, Value = stat_values)
+                    
+                    output$rf_random_stats <- renderTable({random_stats})
+                  })
 
   
   })

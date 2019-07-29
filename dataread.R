@@ -8,7 +8,10 @@ library(randomForest)
 
 # Initial data read and variable work:
 poke_data <- read_csv("pokemon.csv") %>% tibble::as_tibble()
+# This has to do with the info tab.
 x <- 1
+# This is to prevent the user predicting with no rf model
+rf_model_generated <- "no"
 
 poke_data <- poke_data %>%
   mutate(capture_rate = as.integer(capture_rate),

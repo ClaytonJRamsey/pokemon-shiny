@@ -1,6 +1,6 @@
 
-
 source("dataread.r")
+source("text_processing_functions.R")
 
 shinyUI(fluidPage(
   tabsetPanel(
@@ -282,15 +282,15 @@ shinyUI(fluidPage(
     tabPanel("Predictive modeling",
              tabsetPanel(
                tabPanel("K Nearest Neighbors",
-                        h1("Predicting Legendary Status"),
+                        h1("Predict Legendary Status"),
                         fluidRow(
                           column(width = 6,
-                                 strong("Choose Variables to use:"),
+                                 h3("Choose Variables to use:"),
                                  selectInput("knn_var1", "First Variable", poke_numerical_vars),
                                  selectInput("knn_var2", "Second variable", poke_numerical_vars)
                                  ),
                           column(width = 6,
-                                 strong("Choose Values for prediction:"),
+                                 h3("Choose Values for prediction:"),
                                  numericInput("knn_pred1", "First Value", value = 0, min = 0),
                                  numericInput("knn_pred2", "Second Value Value", value = 0, min = 0),
                                  actionButton("knn_makepred", "Issue Prediction"),
@@ -302,9 +302,35 @@ shinyUI(fluidPage(
                         actionButton("check_misclass", "Check"),
                         tableOutput("k_mis_class")
                         ),
-               tabPanel("Tree Regression",
-                        p("Content")
+               tabPanel("Random Forest",
+                        fluidRow(
+                          h1("Predict a numeric property"),
+                          column(width = 6,
+                                 # only certain variables with good values for regression.
+                                 selectInput("rf_response",
+                                             label = "Variable to predict",
+                                             
+                                             choices = c("attack", "defense", "hp", "speed",
+                                                         "base_egg_steps", "base_happiness",
+                                                         "capture_rate", "height_m", "weight_kg")),
+                                 # using the sqrt p and p/3 rules
+                                 sliderInput("rf_vars_to_use", "Random Forest variables",
+                                             min = 6,
+                                             max = 12,
+                                             value = 6),
+                                 actionButton("rf_generate", "Generate Model"),
+                                 br(),
+                                 textOutput("rf_RMSE"),
+                                 textOutput("rf_mean")
+                                 ),
+                          column(width = 6,
+                                 actionButton("rf_predict", "Predict variable with random pokemon:"),
+                                 uiOutput("random_name"),
+                                 textOutput("rf_prediction"),
+                                 tableOutput("rf_random_stats")
+                                 )
                         )
+                      )
              )
     )
   )
