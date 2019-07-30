@@ -39,7 +39,7 @@ shinyUI(fluidPage(
                mainPanel(
                  h1("The Complete Pokémon Dataset"), br(),
                  br(),
-                 p("Pokémon is a popular entertainment francise in which players capture, train, and battle with fantasy monsters. The term Pokémon comes from the Japanese name, 'Pocket Monsters.' The first Pokémon video game was released in 1996. Since then there have been a variety of films, TV shows, games, and books based on these creatures. \n\n This dataset contains 41 variables describing the variety of properties of each Pokémon from the first 7 generations of the video game. The data set is ",
+                 p(tags$a(href="https://en.wikipedia.org/wiki/Pok%C3%A9mon", "Pokémon"), " is a popular entertainment francise in which players capture, train, and battle with fantasy monsters. The term Pokémon comes from the Japanese name, 'Pocket Monsters.' The first Pokémon video game was released in 1996. Since then there have been a variety of films, TV shows, games, and books based on these creatures. \n\n This dataset contains 41 variables describing the variety of properties of each Pokémon from the first 7 generations of the video game. The data set is ",
                  tags$a(href = "https://www.kaggle.com/rounakbanik/pokemon",
                           "available from Kaggle."),
                  br(),br(),
