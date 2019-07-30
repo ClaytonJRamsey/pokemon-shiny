@@ -223,15 +223,15 @@ shinyServer(function(input, output, session) {
     cluster_data <- cbind(poke_data_numeric_standard, 
                           cluster_number, 
                           pokemon_name)
-    kgraph <- ggplot(cluster_data) + geom_point(aes(x = km_horiz, 
+    kgraph <- ggplot(cluster_data, aes(text = pokemon_name)) + geom_point(aes(x = km_horiz, 
                                                     y = km_vert, 
-                                                    color = cluster_number,
-                                                    text = pokemon_name)) +
+                                                    color = cluster_number#,
+                                                    ))+#text = pokemon_name)) +
                                      labs(x = paste("standardized", km_horiz_name, sep = " "), 
                                           y = paste("standardized", km_vert_name, sep = " ")) 
                                      
       
-    kgraph <- ggplotly(kgraph)
+    kgraph <- ggplotly(kgraph, tooltip = c("text"))
       
     output$kmeans_graph <- renderUI(
       tagList(

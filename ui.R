@@ -4,6 +4,7 @@ source("text_processing_functions.R")
 
 shinyUI(fluidPage(
   withMathJax(),
+  
   tabsetPanel(
     # An information page that describes the data and abilities of the app:
     tabPanel("Pokémon dataset",
