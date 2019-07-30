@@ -3,9 +3,10 @@ source("dataread.r")
 source("text_processing_functions.R")
 
 shinyUI(fluidPage(
+  withMathJax(),
   tabsetPanel(
     # An information page that describes the data and abilities of the app:
-    tabPanel("Pokémon Dataset",
+    tabPanel("Pokémon dataset",
              sidebarLayout(
                sidebarPanel(
                  h3("Find out more about Pokémon:"),
@@ -36,16 +37,27 @@ shinyUI(fluidPage(
                ),
                mainPanel(
                  h1("The Complete Pokémon Dataset"), br(),
+                 br(),
+                 p("Pokémon is a popular entertainment francise in which players capture, train, and battle with fantasy monsters. The term Pokémon comes from the Japanese name, 'Pocket Monsters.' The first Pokémon video game was released in 1996. Since then there have been a variety of films, TV shows, games, and books based on these creatures. \n\n This dataset contains 41 variables describing the variety of properties of each Pokémon from the first 7 generations of the video game. The data set is ",
                  tags$a(href = "https://www.kaggle.com/rounakbanik/pokemon",
-                        "Available from Kaggle"), br(),
-                 p("Pokémon is a popular entertainment francise in which players capture, train, and battle with fantasy monsters. The term Pokémon comes from the Japanese name, 'Pocket Monsters.' The first Pokémon video game was released in 1996. Since then there have been a variety of films, TV shows, games, and books based on these creatures. \n\n This dataset contains 41 variables describing the variety of properties of each Pokémon from the first 7 generations of the video game.")
+                          "available from Kaggle."),
+                 br(),br(),
+                 p("This app contains the following tabs:"),
+                 tags$ul(
+                        tags$li("The first tab contains this information and a sidebar that will let you link to the US Pokédex website for the Pokémon in the dataset."),
+                        tags$li("The second tab will let you select different variables, filter some of them, and download the data you are viewing."),
+                        tags$li("The third tab allows the user to form graphs with one or two variables, as well as a grouped table which can be downloaded."),
+                        tags$li("The fourth tab performs a k-means clustering and allows the user to view the data points accoring to two variables at once."),
+                        tags$li("The fifth tab provides a knn predictor for Legendary status, allowing the user to specify the values of two variables. There is also a regression forest that gives the user a choice of variable to predict.")
+                        )
+                   )
                )
              )
     ),
 
     # A page that allows the user to scroll through the data 
     # (or subset of data of interest)
-    tabPanel("Data Table",
+    tabPanel("Data table",
              sidebarLayout(
                sidebarPanel(
                  actionButton(
@@ -252,15 +264,15 @@ shinyUI(fluidPage(
                ),
                mainPanel(
                  conditionalPanel("input.number_vars == '1 var. graph'",
-                                  p("One Variable:"),
+                                  h3("One Variable:"),
                                   uiOutput("one_var_graph")
                ),
                  conditionalPanel("input.number_vars == '2 var. graph'",
-                                  p("Two Variables:"),
+                                  h3("Two Variables:"),
                                   uiOutput("two_var_graph")
                ),
                  conditionalPanel("input.number_vars == 'Tabular'",
-                                  p("Summary Table:"),
+                                  h3("Summary Table:"),
                                   DT::DTOutput("grouping_table"),
                                   textInput("filename2", "Enter file name:", value = "pokemonSummary"),
                                   downloadButton("csv_download2", 
@@ -274,15 +286,32 @@ shinyUI(fluidPage(
     # A page with either clustering (include a dendogram) 
     # or principal components analysis (include a biplot) - 
     # again where the user can specify aspects of the algorithm
-    tabPanel("Cluster Analysis",
-             p("Clusters")
+    tabPanel("Cluster analysis",
+             sidebarLayout(
+               sidebarPanel(
+                 sliderInput("number_of_means", label = "Number of Means:",
+                             min = 2,
+                             max = 5,
+                             value = 2),
+                 selectInput("kmeans_var1", label = "First Variable",
+                             choices = poke_numerical_vars,
+                             selected = "attack"),
+                 selectInput("kmeans_var2", label = "Second Variable",
+                             choices = poke_numerical_vars,
+                             selected = "defense")
+               ),
+               mainPanel(
+                 h1("K-Means Clustering"),
+                 uiOutput("kmeans_graph")
+               )
+             )
     ),
     
     # A page for modeling - see below for details
     tabPanel("Predictive modeling",
              tabsetPanel(
-               tabPanel("K Nearest Neighbors",
-                        h1("Predict Legendary Status"),
+               tabPanel("K nearest neighbors",
+                        h1("Predict legendary status"),
                         fluidRow(
                           column(width = 6,
                                  h3("Choose Variables to use:"),
@@ -302,7 +331,7 @@ shinyUI(fluidPage(
                         actionButton("check_misclass", "Check"),
                         tableOutput("k_mis_class")
                         ),
-               tabPanel("Random Forest",
+               tabPanel("Random forest",
                         fluidRow(
                           h1("Predict a numeric property"),
                           column(width = 6,
@@ -318,10 +347,15 @@ shinyUI(fluidPage(
                                              min = 6,
                                              max = 12,
                                              value = 6),
+                                 uiOutput("RMSE_formula"),
+                                 tags$a(href = "https://www.codecogs.com/latex/eqneditor.php",
+                                        "LaTeX generated at codecogs.com"),
+                                 br(),
                                  actionButton("rf_generate", "Generate Model"),
                                  br(),
                                  textOutput("rf_RMSE"),
                                  textOutput("rf_mean")
+                                 
                                  ),
                           column(width = 6,
                                  actionButton("rf_predict", "Predict variable with random pokemon:"),

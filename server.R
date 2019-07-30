@@ -2,9 +2,9 @@
 
 shinyServer(function(input, output, session) {
 
-####################### Observation Zone ##################################33
+####################### Observation ##################################
   observe({
-    # For the sidebar on Tab #1.
+    ###################################################### Tab #1.
       if(input$pokemon_basic == "Number"){
         x <- input$entry_number
       }else{
@@ -13,9 +13,50 @@ shinyServer(function(input, output, session) {
         }
       }
     
-    g <- ggplot(poke_data)
+    # To generate the link.
+    output$pokemon_info <- 
+      renderUI(tagList(
+        strong(paste0(poke_data$name[x], 
+                      " is a ", poke_data$classfication[x], 
+                      " originally introduced in Generation ", 
+                      poke_data$generation[x], ".")),
+        br(),
+        tags$a(href = poke_data$pokedex_website[x], 
+               "Click here for more information.")
+        )
+      )
+    ################################################################### Tab #2.
+    attack_values <- input$var_attack
+    defense_values <- input$var_defense
+    speed_values <- input$var_speed
+    hp_values <- input$var_hp
     
+    filter_table <- poke_data %>% 
+      filter(as.character(generation) %in% input$var_generation,
+             attack <= attack_values[2] & 
+               attack >= attack_values[1],
+             defense <= defense_values[2] & 
+               defense >= defense_values[1],
+             speed <= speed_values[2] &
+               speed >= speed_values[1],
+             hp <= hp_values[2] &
+               hp >= hp_values[1]
+      ) %>%
+      select(c("name", input$var_boxes))
     
+    output$dynamic_table <- DT::renderDT(filter_table, rownames = FALSE)
+    
+    # file download for tables
+    file_name <- paste0(input$filename, ".csv")
+    
+    output$csv_download <- downloadHandler(
+      filename = file_name,
+      content = function(file){
+        write_csv(filter_table, file)
+      }
+    )
+    
+    ###################################################### Tab #3.
     # dynamic UI for single variable graphs
     one_var_visual <- input$one_var_visual # numerical variables
     one_var_plot_type <- input$one_var_plot_type # Density or Histogram
@@ -32,7 +73,7 @@ shinyServer(function(input, output, session) {
                       max = 10 + floor(max(var, na.rm = TRUE)/4)
                       )
     
-    
+    # One var logic
     if(one_var_plot_type == "Density"){
       if(fill_by_generation == "No"){
         onevar_g <- g + geom_density(aes(x = var), na.rm = TRUE) + 
@@ -135,92 +176,101 @@ shinyServer(function(input, output, session) {
       output$two_var_graph <- renderUI(tagList(renderPlot(twovar_g)))
     }
     
+    # Grouped table logic
+    if(input$to_group_by == 1){
+      poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]])
+    }
+    if(input$to_group_by == 2){
+      poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]], 
+                                                 `Variable 2`=poke_data[[input$group_var2]])
+    }
+    if(input$to_group_by == 3){
+      poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]],
+                                                 `Variable 2`=poke_data[[input$group_var2]],
+                                                 `Variable 3`=poke_data[[input$group_var3]])
+    }
+    summ_var_name <- input$summary_var
+    poke_group_table <- poke_group_table %>% 
+      summarise(`Mean` = mean(eval(parse(text = summ_var_name)), na.rm = TRUE),
+                `Standard Deviation` = sd(eval(parse(text = summ_var_name)), na.rm = TRUE))
     
-      output$pokemon_info <- 
-        renderUI(tagList(
-          strong(paste0(poke_data$name[x], 
-                    " is a ", poke_data$classfication[x], 
-                    " originally introduced in Generation ", 
-                    poke_data$generation[x], ".")),
-          br(),
-          tags$a(href = poke_data$pokedex_website[x], 
-                 "Click here for more information.")
-          )
-        )
-      
+    output$grouping_table <- DT::renderDT(poke_group_table, rownames = FALSE)
+    
+    file_name2 <- paste0(input$filename2, ".csv")
+    
+    # Download the grouped table
+    output$csv_download2 <- downloadHandler(
+      filename = file_name2,
+      content = function(file){
+        write_csv(poke_group_table, file)
+      }
+    )
+    
 
-      # Grouping table from the third tab.
-      if(input$to_group_by == 1){
-        poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]])
-      }
-      if(input$to_group_by == 2){
-        poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]], 
-                                                   `Variable 2`=poke_data[[input$group_var2]])
-      }
-      if(input$to_group_by == 3){
-        poke_group_table <- poke_data %>% group_by(`Variable 1`=poke_data[[input$group_var1]],
-                                                   `Variable 2`=poke_data[[input$group_var2]],
-                                                   `Variable 3`=poke_data[[input$group_var3]])
-      }
-      summ_var_name <- input$summary_var
-      poke_group_table <- poke_group_table %>% 
-        summarise(`Mean` = mean(eval(parse(text = summ_var_name)), na.rm = TRUE),
-                  `Standard Deviation` = sd(eval(parse(text = summ_var_name)), na.rm = TRUE))
+    ###################################################### Tab #4.
+    
+    # K-Means graph logic
+    km_horiz <- poke_data_numeric_standard[[input$kmeans_var1]]
+    km_vert <- poke_data_numeric_standard[[input$kmeans_var2]]
+    km_horiz_name <- input$kmeans_var1
+    km_vert_name <- input$kmeans_var2
+    km_clust <- input$number_of_means
+    kmeans_fit <- kmeans(poke_data_numeric_standard, as.integer(km_clust))
+    cluster_number <- as.factor(kmeans_fit$cluster)
+    pokemon_name <- poke_data_names$name
+    
+    # I put the names back in to show them whan hovering in plotly
+    cluster_data <- cbind(poke_data_numeric_standard, 
+                          cluster_number, 
+                          pokemon_name)
+    kgraph <- ggplot(cluster_data) + geom_point(aes(x = km_horiz, 
+                                                    y = km_vert, 
+                                                    color = cluster_number,
+                                                    text = pokemon_name)) +
+                                     labs(x = paste("standardized", km_horiz_name, sep = " "), 
+                                          y = paste("standardized", km_vert_name, sep = " ")) 
+                                     
       
-      output$grouping_table <- DT::renderDT(poke_group_table, rownames = FALSE)
-     
-     
-      attack_values <- input$var_attack
-      defense_values <- input$var_defense
-      speed_values <- input$var_speed
-      hp_values <- input$var_hp
+    kgraph <- ggplotly(kgraph)
       
-      filter_table <- poke_data %>% 
-        filter(as.character(generation) %in% input$var_generation,
-               attack <= attack_values[2] & 
-                 attack >= attack_values[1],
-               defense <= defense_values[2] & 
-                 defense >= defense_values[1],
-               speed <= speed_values[2] &
-                 speed >= speed_values[1],
-               hp <= hp_values[2] &
-                 hp >= hp_values[1]
-               ) %>%
-        select(c("name", input$var_boxes))
-      
-      output$dynamic_table <- DT::renderDT(filter_table, rownames = FALSE)
-      
-      # file download for tables
-      file_name <- paste0(input$filename, ".csv")
-      file_name2 <- paste0(input$filename2, ".csv")
-      
-      output$csv_download <- downloadHandler(
-        filename = file_name,
-        content = function(file){
-          write_csv(filter_table, file)
-          }
+    output$kmeans_graph <- renderUI(
+      tagList(
+        renderPlotly(kgraph),
+        paste0("Total Sum of Squares: ", as.character(kmeans_fit$totss)), br(),
+        paste0("Between Sum of Squares: ", as.character(kmeans_fit$betweenss)), br(),
+        paste0("Within Sum of Squares: ", paste(as.character(kmeans_fit$withinss), collapse = ", "))
       )
-      
-      output$csv_download2 <- downloadHandler(
-        filename = file_name2,
-        content = function(file){
-          write_csv(poke_group_table, file)
-        }
-      )
+    )
+    
       
       # The predictor will crash if these are the same.
-      updateSelectInput(session, "knn_var2", choices = setdiff(poke_numerical_vars, input$knn_var1))
+      updateSelectInput(session, "knn_var2", choices = setdiff(poke_numerical_vars, 
+                                                               input$knn_var1))
+      
+      ###################################### Tab #5
+      # Math type for the RMSE
+      output$RMSE_formula <- renderUI({
+   
+        withMathJax(helpText('The "Root Mean Square Error" is used to judge the predictions.'),
+                    helpText('Formula: 
+                             $$\\mathrm{RMSE}=\\sqrt{\\frac{\\sum_{i=1}^{n}(P_i-O_i)^2}{n}}$$'),
+                    helpText("The symbols 'P' and 'O' stand for the observed and predicted data.")
+                    ) 
+      })
       
     })
 ################ End of observe function ###################
+  
+################ Below here are several observeEvent functions to handle
+################ some things that needed that treatment.
       
-  # The clear button in tab 2
+  # The clear button on tab 2
   observeEvent(input$var_clear,
     updateCheckboxGroupInput(session, "var_boxes",
                              selected = character(0))
               )
   
-  # the knn check misclassifications button
+  # the knn check misclassifications button on tab 5
   observeEvent(input$check_misclass,
                 {
                   kval <- 1:10
@@ -241,7 +291,7 @@ shinyServer(function(input, output, session) {
                 }
             )
   
-  # the knn make prediction button
+  # the knn make prediction button on tab 5
   observeEvent(input$knn_makepred,
                 {
                  # names
@@ -264,7 +314,7 @@ shinyServer(function(input, output, session) {
                }
               )
   
-  # the random forest generate model button
+  # the random forest generate model button on tab 5
   observeEvent(input$rf_generate,
                {
                  rf_vars_to_use <- input$rf_vars_to_use # up to 11
@@ -276,6 +326,7 @@ shinyServer(function(input, output, session) {
                                         importance = TRUE)
                  rf_pred <- predict(rf_fit, newdata = poke_testing_full)
                  rf_RMSE <- sqrt(mean((rf_pred-poke_testing_full[[rf_response]])^2))
+                 
                  output$rf_RMSE <- 
                    renderText({paste0("RMSE of this model: ", rf_RMSE)})
                  output$rf_mean <- 
@@ -284,6 +335,7 @@ shinyServer(function(input, output, session) {
                  rf_model_generated <- "yes"
                })
   
+  # The random forest prediction on tab 5
   observeEvent(input$rf_predict,{
                     # Randomization:
                     random_stats <- 

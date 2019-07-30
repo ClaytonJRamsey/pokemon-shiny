@@ -24,8 +24,11 @@ poke_data <- poke_data %>%
                                   pokedex_number),
          type2 = ifelse(is.na(type2), "none", type2),
          experience_growth = as.numeric(experience_growth)) %>% 
+  mutate(percentage_male = factor(percentage_male, levels(factor(percentage_male))[c(1, 3:7, 2, 8)])) %>%
   select("name", everything()) %>% select(-"pokedex_number")
 # Because pokedex number is the same as row number in the file.
+
+g <- ggplot(poke_data)
 
 # This code forms vector of the names of different variable types.
 numeric_checker <- function(n){
@@ -73,7 +76,7 @@ poke_data_discrete <- poke_data %>% filter(complete.cases(.)) %>% select(!!poke_
 # A data frame of all the modeling vars with factor vars for categorical.
 # Dropping is_legendary because there is a factor variable version of it.
 poke_data_model <- cbind(poke_data_numeric, poke_data_discrete) %>%
-  select(-is_legendary) %>% mutate(percentage_male = as.factor(percentage_male),
+  select(-is_legendary) %>% mutate(#percentage_male = as.factor(percentage_male),
                                    type1 = as.factor(type1),
                                    type2 = as.factor(type2),
                                    legendary_factor = as.factor(legendary_factor))

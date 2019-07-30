@@ -190,3 +190,10 @@ kgraph
 print(kmeans_fit$totss)
 print(kmeans_fit$withinss)
 print(kmeans_fit$betweenss)
+
+kgraph <- ggplot(cluster_data) + geom_point(aes(x = attack, 
+                                                y = defense, 
+                                                color = cluster_number,
+                                                text = pokemon_name)) +
+  labs(x = "attack", y = "defense")
+kgraph <- ggplotly(kgraph)#, tooltip = "pokemon_name")
